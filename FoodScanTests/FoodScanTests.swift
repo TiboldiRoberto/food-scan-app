@@ -4,12 +4,12 @@ import XCTest
 final class FoodScanTests: XCTestCase {
     var contentViewModel: ContentViewModel!
     var testSession: URLSession!
-
+    
     override func setUpWithError() throws {
         
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [URLProtocolMock.self]
-       
+        
         testSession = URLSession(configuration: config)
         
         contentViewModel = ContentViewModel(urlSession: testSession)
@@ -18,35 +18,16 @@ final class FoodScanTests: XCTestCase {
         URLProtocolMock.mockResponseData.removeAll()
         URLProtocolMock.mockError = nil
     }
-
+    
     override func tearDownWithError() throws {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
     }
-
+    
     func testFetchProduct_WhenValidBarcode_ReturnsProduct() async throws {
         // Arrange
         let barcode = "5941132022421"
         let sessionURL = URL(string: "https://world.openfoodfacts.org/api/v2/product/\(barcode).json")!
-        let mockedResponse = """
-            {
-              "status": 1,
-              "product": {
-                "code": "5941132022421",
-                "product_name": "mix pentru Gustare de ovaz cu ciocolata",
-                "image_url": "https://images.openfoodfacts.org/images/products/594/113/202/2421/front_ro.10.400.jpg",
-                "nutriments": {
-                  "energy-kcal_100g": 113,
-                  "fat_100g": 2.9,
-                  "saturated-fat_100g": 1.2,
-                  "carbohydrates_100g": 17,
-                  "sugars_100g": 5.4,
-                  "fiber_100g": 2.3,
-                  "proteins_100g": 3.6,
-                  "salt_100g": 0.19
-                }
-              }
-            }
-            """
+        let mockedResponse = createMockProductResponse()
         
         URLProtocolMock.mockResponseData = [ sessionURL : mockedResponse.data(using: .utf8)!]
         
@@ -96,7 +77,6 @@ final class FoodScanTests: XCTestCase {
         
         URLProtocolMock.mockResponseData = [ sessionURL : mockedResponse.data(using: .utf8)!]
         
-        // Act
         await contentViewModel.fetchProduct(for: barcode)
         
         let product = await contentViewModel.product
@@ -108,7 +88,6 @@ final class FoodScanTests: XCTestCase {
     
     func testFetchProduct_WhenNetworkError_SetsErrorMessage() async {
         let barcode = "3086123408067"
-        let sessionURL = URL(string: "https://world.openfoodfacts.org/api/v2/product/\(barcode).json")!
         
         URLProtocolMock.mockError = NSError(
             domain: NSURLErrorDomain,
@@ -116,7 +95,6 @@ final class FoodScanTests: XCTestCase {
             userInfo: [NSLocalizedDescriptionKey: "No internet connection"]
         )
         
-        // Act
         await contentViewModel.fetchProduct(for: barcode)
         
         let product = await contentViewModel.product
@@ -135,7 +113,6 @@ final class FoodScanTests: XCTestCase {
         
         URLProtocolMock.mockResponseData = [ sessionURL : mockedResponse.data(using: .utf8)!]
         
-        // Act
         await contentViewModel.fetchProduct(for: barcode)
         
         let product = await contentViewModel.product
@@ -145,12 +122,29 @@ final class FoodScanTests: XCTestCase {
         XCTAssertNotNil(errorMessage)
         XCTAssertTrue(errorMessage?.contains("Eroare") ?? false)
     }
+}
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+extension FoodScanTests {
+    func createMockProductResponse() -> String {
+        return """
+            {
+              "status": 1,
+              "product": {
+                "code": "5941132022421",
+                "product_name": "mix pentru Gustare de ovaz cu ciocolata",
+                "image_url": "https://images.openfoodfacts.org/images/products/594/113/202/2421/front_ro.10.400.jpg",
+                "nutriments": {
+                  "energy-kcal_100g": 113,
+                  "fat_100g": 2.9,
+                  "saturated-fat_100g": 1.2,
+                  "carbohydrates_100g": 17,
+                  "sugars_100g": 5.4,
+                  "fiber_100g": 2.3,
+                  "proteins_100g": 3.6,
+                  "salt_100g": 0.19
+                }
+              }
+            }
+            """
     }
-
 }
