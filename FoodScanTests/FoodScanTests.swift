@@ -9,9 +9,21 @@ import XCTest
 @testable import FoodScan
 
 final class FoodScanTests: XCTestCase {
+    var contentViewModel: ContentViewModel!
+    var testSession: URLSession!
 
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+        
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [URLProtocolMock.self]
+       
+        testSession = URLSession(configuration: config)
+        
+        contentViewModel = ContentViewModel(urlSession: testSession)
+        
+        // Clear any old test data
+        URLProtocolMock.mockResponseData.removeAll()
+        URLProtocolMock.mockError = nil
     }
 
     override func tearDownWithError() throws {
