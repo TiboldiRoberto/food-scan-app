@@ -22,7 +22,17 @@ class URLProtocolMock: URLProtocol {
         // Check if we have data for this URL
         if let url = request.url,
            let data = URLProtocolMock.mockResponseData[url] {
-            // Send back our fake data
+            
+            // Create a fake HTTP response
+            let response = HTTPURLResponse(
+                url: url,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            
+            // Send response and data
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             client?.urlProtocol(self, didLoad: data)
         }
         
