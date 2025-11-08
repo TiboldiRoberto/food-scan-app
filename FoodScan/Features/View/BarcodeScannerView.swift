@@ -79,18 +79,24 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         previewLayer.videoGravity = .resizeAspectFill
         view.layer.addSublayer(previewLayer)
 
-        captureSession.startRunning()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.captureSession.startRunning()
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if captureSession.isRunning {
-            captureSession.stopRunning()
+            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                self?.captureSession.stopRunning()
+            }
         }
     }
 
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        captureSession.stopRunning()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.captureSession.stopRunning()
+        }
         if let metadataObject = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
            let stringValue = metadataObject.stringValue {
             AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
