@@ -1,10 +1,3 @@
-//
-//  FoodScanTests.swift
-//  FoodScanTests
-//
-//  Created by Roberto on 08.11.2025.
-//
-
 import XCTest
 @testable import FoodScan
 
@@ -87,6 +80,70 @@ final class FoodScanTests: XCTestCase {
         XCTAssertEqual(salt100g, 0.19)
         XCTAssertNil(errorMessage)
         
+    }
+    
+    func testFetchProduct_WhenInvalidBarcode_SetsErrorMessage() async {
+        let barcode = "0000000000000"
+        let sessionURL = URL(string: "https://world.openfoodfacts.org/api/v2/product/\(barcode).json")!
+        
+        let mockedResponse = """
+            {
+            "code":"0000000000000",
+            "status":0,
+            "status_verbose":"product not found"
+            }
+            """
+        
+        URLProtocolMock.mockResponseData = [ sessionURL : mockedResponse.data(using: .utf8)!]
+        
+        // Act
+        await contentViewModel.fetchProduct(for: barcode)
+        
+        let product = await contentViewModel.product
+        let errorMessage = await contentViewModel.errorMessage
+        
+        XCTAssertNil(product)
+        XCTAssertEqual(errorMessage, "Produsul nu a fost găsit.")
+    }
+    
+    func testFetchProduct_WhenNetworkError_SetsErrorMessage() async {
+        let barcode = "3086123408067"
+        let sessionURL = URL(string: "https://world.openfoodfacts.org/api/v2/product/\(barcode).json")!
+        
+        URLProtocolMock.mockError = NSError(
+            domain: NSURLErrorDomain,
+            code: NSURLErrorNotConnectedToInternet,
+            userInfo: [NSLocalizedDescriptionKey: "No internet connection"]
+        )
+        
+        // Act
+        await contentViewModel.fetchProduct(for: barcode)
+        
+        let product = await contentViewModel.product
+        let errorMessage = await contentViewModel.errorMessage
+        
+        XCTAssertNil(product)
+        XCTAssertNotNil(errorMessage)
+        XCTAssertTrue(errorMessage?.contains("Eroare") ?? false)
+    }
+    
+    func testFetchProduct_WhenInvalidJSON_SetsErrorMessage() async {
+        let barcode = "0000000000000"
+        let sessionURL = URL(string: "https://world.openfoodfacts.org/api/v2/product/\(barcode).json")!
+        
+        let mockedResponse = "This is not valid JSON!"
+        
+        URLProtocolMock.mockResponseData = [ sessionURL : mockedResponse.data(using: .utf8)!]
+        
+        // Act
+        await contentViewModel.fetchProduct(for: barcode)
+        
+        let product = await contentViewModel.product
+        let errorMessage = await contentViewModel.errorMessage
+        
+        XCTAssertNil(product)
+        XCTAssertNotNil(errorMessage)
+        XCTAssertTrue(errorMessage?.contains("Eroare") ?? false)
     }
 
     func testPerformanceExample() throws {
